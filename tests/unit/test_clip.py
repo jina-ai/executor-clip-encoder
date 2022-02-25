@@ -188,6 +188,15 @@ def test_batch_size_no_preprocessing(
         assert doc.embedding.shape == (512,)
 
 
+def test_overwrite_embeddings(encoder: CLIPEncoder):
+    docs = DocumentArray(
+        [Document(embedding=np.random.rand(10)) for _ in range(5)]
+    )
+    encoder.encode(docs, parameters={'overwrite_embeddings': False})
+    for doc in docs:
+        assert doc.embedding.shape == (10,)
+
+
 def test_embeddings_quality(encoder: CLIPEncoder):
     """
     This tests that the embeddings actually "make sense".
