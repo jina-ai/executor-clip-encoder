@@ -1,0 +1,4 @@
+jtype: CLIPEncoder
+metas:
+  py_modules:
+    - executor.py
