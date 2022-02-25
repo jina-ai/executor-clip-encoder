@@ -1,2 +1,5 @@
 manifest_version: 1
 name: CLIPEncoder
+description: Encoder that embeds documents using either the CLIP vision encoder or the CLIP text encoder, depending on the content type of the document.
+url: https://github.com/jina-ai/executor-clip-encoder
+keywords: [clip, image, text, crossmodal, encoder, PyTorch, en]
