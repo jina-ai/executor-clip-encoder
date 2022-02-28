@@ -196,6 +196,10 @@ def test_overwrite_embeddings(encoder: CLIPEncoder):
     for doc in docs:
         assert doc.embedding.shape == (10,)
 
+    encoder.encode(docs, parameters={'overwrite_embeddings': True})
+    for doc in docs:
+        assert doc.embedding.shape == (512,)
+
 
 def test_embeddings_quality(encoder: CLIPEncoder):
     """
