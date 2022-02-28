@@ -190,8 +190,21 @@ def test_batch_size_no_preprocessing(
 
 def test_overwrite_embeddings(encoder: CLIPEncoder):
     docs = DocumentArray(
-        [Document(embedding=np.random.rand(10)) for _ in range(5)]
+        [
+            Document(text='foo', embedding=np.random.rand(10))
+            for _ in range(5)
+        ] +
+        [
+            Document(
+                tensor=np.random.randint(0, 255, (100, 100, 3)),
+                embedding=np.random.rand(10)
+            ) for _ in range(5)
+        ]
     )
+    encoder.encode(docs, parameters={})
+    for doc in docs:
+        assert doc.embedding.shape == (10,)
+
     encoder.encode(docs, parameters={'overwrite_embeddings': False})
     for doc in docs:
         assert doc.embedding.shape == (10,)
