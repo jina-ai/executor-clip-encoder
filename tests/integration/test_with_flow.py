@@ -19,7 +19,7 @@ def test_integration(request_size: int):
     with Flow().add(uses=CLIPEncoder) as flow:
         da = flow.post(on='/index', inputs=docs, request_size=request_size)
 
-    assert len(da) == 50
+    assert len(da) == 100
     for doc in da:
         assert doc.embedding is not None
         assert doc.embedding.shape == (512,)

@@ -98,10 +98,13 @@ class CLIPEncoder(Executor):
         """
         traversal_paths = parameters.get('traversal_paths', self.traversal_paths)
         batch_size = parameters.get('batch_size', self.batch_size)
+        overwrite_embeddings = parameters.get(
+            'overwrite_embeddings', self.overwrite_embeddings
+        )
         text_docs = DocumentArray(
             filter(
                 lambda x: (
-                    bool(x.text) and (self.overwrite_embeddings or x.embedding is None)
+                    bool(x.text) and (overwrite_embeddings or x.embedding is None)
                 ),
                 docs[traversal_paths],
             )
@@ -110,7 +113,7 @@ class CLIPEncoder(Executor):
             filter(
                 lambda x: (
                     x.tensor is not None
-                    and (self.overwrite_embeddings or x.embedding is None)
+                    and (overwrite_embeddings or x.embedding is None)
                 ),
                 docs[traversal_paths],
             )
