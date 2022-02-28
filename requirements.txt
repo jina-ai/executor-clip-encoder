@@ -1,5 +1,6 @@
 -f https://download.pytorch.org/whl/torch_stable.html
 docarray
 jina>=3.0
-torch==1.9.0+cpu
-transformers==4.9.1
+Pillow==9.0.1
+torch==1.10.2+cpu
+transformers==4.16.2

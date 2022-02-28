@@ -94,7 +94,7 @@ def test_encoding_cpu_no_preprocessing():
     docs = DocumentArray(
         [
             Document(text='some text'),
-            Document(tensor=np.ones((100, 100, 3), dtype=np.uint8))
+            Document(tensor=np.ones((3, 224, 224), dtype=np.uint8))
         ]
     )
     encoder.encode(docs=docs, parameters={})
@@ -122,7 +122,7 @@ def test_encoding_gpu_no_preprocessing():
     docs = DocumentArray(
         [
             Document(text='some text'),
-            Document(tensor=np.ones((100, 100, 3), dtype=np.uint8))
+            Document(tensor=np.ones((3, 224, 224), dtype=np.uint8))
         ]
     )
     encoder.encode(docs=docs, parameters={})
@@ -190,11 +190,28 @@ def test_batch_size_no_preprocessing(
 
 def test_overwrite_embeddings(encoder: CLIPEncoder):
     docs = DocumentArray(
-        [Document(embedding=np.random.rand(10)) for _ in range(5)]
+        [
+            Document(text='foo', embedding=np.random.rand(10))
+            for _ in range(5)
+        ] +
+        [
+            Document(
+                tensor=np.random.randint(0, 255, (100, 100, 3)),
+                embedding=np.random.rand(10)
+            ) for _ in range(5)
+        ]
     )
+    encoder.encode(docs, parameters={})
+    for doc in docs:
+        assert doc.embedding.shape == (10,)
+
     encoder.encode(docs, parameters={'overwrite_embeddings': False})
     for doc in docs:
         assert doc.embedding.shape == (10,)
+
+    encoder.encode(docs, parameters={'overwrite_embeddings': True})
+    for doc in docs:
+        assert doc.embedding.shape == (512,)
 
 
 def test_embeddings_quality(encoder: CLIPEncoder):
@@ -225,7 +242,7 @@ def test_embeddings_quality(encoder: CLIPEncoder):
     encoder.encode(docs, {})
 
     docs.match(docs)
-    matches = ['B', 'A', 'D', 'C', 'cat', 'dog', 'helicopter', 'airplane']
+    matches = ['cat', 'dog', 'helicopter', 'airplane', 'B', 'A', 'D', 'C']
     for i, doc in enumerate(docs):
         assert doc.matches[1].id == matches[i]
 
@@ -234,7 +251,6 @@ def test_openai_embed_match():
     data_dir = Path(__file__).parent.parent / 'imgs'
     image_docs = [
         Document(tensor=np.array(Image.open(data_dir / 'dog.jpg'))),
-        Document(tensor=np.array(Image.open(data_dir / 'cat.jpg'))),
         Document(tensor=np.array(Image.open(data_dir / 'airplane.jpg'))),
         Document(tensor=np.array(Image.open(data_dir / 'helicopter.jpg'))),
     ]
@@ -261,7 +277,7 @@ def test_openai_embed_match():
         tokens = clip.tokenize([doc.text for doc in text_docs])
         clip_text_embeddings = model.encode_text(tokens).numpy()
 
-    clip_embeddings = np.stack(
+    clip_embeddings = np.concatenate(
         [clip_image_embeddings, clip_text_embeddings], axis=0
     )
     np.testing.assert_almost_equal(clip_embeddings, executor_embeddings, 5)
