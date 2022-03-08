@@ -5,9 +5,10 @@ import clip
 import numpy as np
 import pytest
 import torch
-from executor import CLIPEncoder
-from jina import Document, DocumentArray, Executor
 from PIL import Image
+from jina import Document, DocumentArray, Executor
+
+from executor import CLIPEncoder
 
 
 @pytest.fixture(scope='module')
@@ -149,6 +150,36 @@ def test_batch(encoder: CLIPEncoder):
     )
     encoder.encode(docs, parameters={})
     assert len(docs.embeddings) == 2
+    assert docs[0].embedding.shape == (512,)
+    assert docs[0].embedding.dtype == np.float32
+    np.testing.assert_allclose(docs[0].embedding, docs[1].embedding)
+
+def test_batch_blob(encoder: CLIPEncoder):
+    docs = DocumentArray(
+        [
+            Document(tensor=np.ones((100, 100, 3), dtype=np.uint8)).convert_image_tensor_to_blob(),
+            Document(tensor=np.ones((100, 100, 3), dtype=np.uint8)).convert_image_tensor_to_blob(),
+        ]
+    )
+    encoder.encode(docs, parameters={})
+    assert len(docs.embeddings) == 2
+    docs[0].convert_blob_to_image_tensor()
+    assert docs[0].embedding.shape == (512,)
+    assert docs[0].embedding.dtype == np.float32
+    np.testing.assert_allclose(docs[0].embedding, docs[1].embedding)
+
+def test_batch_uri(encoder: CLIPEncoder):
+    docs = DocumentArray(
+        [
+            Document(tensor=np.ones((100, 100, 3), dtype=np.uint8)).convert_image_tensor_to_uri(),
+            Document(tensor=np.ones((100, 100, 3), dtype=np.uint8)).convert_image_tensor_to_uri(),
+        ]
+    )
+    docs[0].tensor = None
+    docs[1].tensor = None
+    encoder.encode(docs, parameters={})
+    assert len(docs.embeddings) == 2
+    assert docs[0].uri != ''
     assert docs[0].embedding.shape == (512,)
     assert docs[0].embedding.dtype == np.float32
     np.testing.assert_allclose(docs[0].embedding, docs[1].embedding)

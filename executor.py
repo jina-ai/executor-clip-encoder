@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Dict, Optional, Sequence
 
 import torch
@@ -112,7 +113,11 @@ class CLIPEncoder(Executor):
         image_docs = DocumentArray(
             filter(
                 lambda x: (
-                    x.tensor is not None
+                    (
+                            x.tensor is not None or
+                            x.blob != b'' or
+                            x.uri
+                    )
                     and (overwrite_embeddings or x.embedding is None)
                 ),
                 docs[traversal_paths],
@@ -128,7 +133,19 @@ class CLIPEncoder(Executor):
 
     def _encode_images(self, batch: DocumentArray):
         """Encode images using the CLIP image encoder."""
-        tensors_batch = [d.tensor for d in batch]
+        tensors_batch = []
+        for d in batch:
+            if d.blob != b'':
+                d_tmp = deepcopy(d)
+                d_tmp.convert_blob_to_image_tensor()
+                tensor = d_tmp.tensor
+            elif d.uri:
+                d_tmp = deepcopy(d)
+                d_tmp.load_uri_to_image_tensor()
+                tensor = d_tmp.tensor
+            else:
+                tensor = d.tensor
+            tensors_batch.append(tensor)
         if self.use_default_preprocessing:
             tensor = self._preprocess_images(tensors_batch)
         else:
