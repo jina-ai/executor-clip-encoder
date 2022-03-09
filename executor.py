@@ -139,12 +139,13 @@ class CLIPEncoder(Executor):
                 d_tmp = deepcopy(d)
                 d_tmp.convert_blob_to_image_tensor()
                 tensor = d_tmp.tensor
-            elif d.uri:
+            elif d.tensor is not None:
+                tensor = d.tensor
+            else:
+                # must be uri
                 d_tmp = deepcopy(d)
                 d_tmp.load_uri_to_image_tensor()
                 tensor = d_tmp.tensor
-            else:
-                tensor = d.tensor
             tensors_batch.append(tensor)
         if self.use_default_preprocessing:
             tensor = self._preprocess_images(tensors_batch)
