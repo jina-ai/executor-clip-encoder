@@ -4,14 +4,14 @@ from typing import Any, Dict, Optional, Sequence
 import torch
 from docarray import DocumentArray
 from jina import Executor, requests
-from transformers import CLIPFeatureExtractor, CLIPTokenizer, CLIPModel
+from transformers import CLIPFeatureExtractor, CLIPModel, CLIPTokenizer
 
 
 class CLIPEncoder(Executor):
-
     def __init__(
         self,
         pretrained_model_name_or_path: str = 'openai/clip-vit-base-patch32',
+        finetuned_checkpoint_path: Optional[str] = None,
         base_feature_extractor: Optional[str] = None,
         base_tokenizer_model: Optional[str] = None,
         use_default_preprocessing: bool = True,
@@ -30,6 +30,8 @@ class CLIPEncoder(Executor):
                 'openai/clip-vit-base-patch32'
             - A path to a directory containing model weights saved, e.g.,
                 ./my_model_directory/
+        :param finetuned_checkpoint_path: The finetuned model checkpoint file path. If set, the pretrained model
+            weights will be replaced with weights from the given checkpoint.
         :param base_feature_extractor: Base feature extractor for images.
             Defaults to ``pretrained_model_name_or_path`` if None.
         :param base_tokenizer_model: Base tokenizer model.
@@ -70,6 +72,18 @@ class CLIPEncoder(Executor):
         )
         self.tokenizer = CLIPTokenizer.from_pretrained(self.base_tokenizer_model)
         self.model = CLIPModel.from_pretrained(self.pretrained_model_name_or_path)
+
+        if finetuned_checkpoint_path:
+            if finetuned_checkpoint_path.startswith(
+                'https://'
+            ) or finetuned_checkpoint_path.startswith('http://'):
+                state_dict = torch.hub.load_state_dict_from_url(
+                    finetuned_checkpoint_path, map_location='cpu', progress=True
+                )
+            else:
+                state_dict = torch.load(finetuned_checkpoint_path, map_location='cpu')
+            self.model.load_state_dict(state_dict)
+
         self.model.eval().to(device)
 
     @requests
@@ -113,11 +127,7 @@ class CLIPEncoder(Executor):
         image_docs = DocumentArray(
             filter(
                 lambda x: (
-                    (
-                            x.tensor is not None or
-                            x.blob != b'' or
-                            x.uri
-                    )
+                    (x.tensor is not None or x.blob != b'' or x.uri)
                     and (overwrite_embeddings or x.embedding is None)
                 ),
                 docs[traversal_paths],
