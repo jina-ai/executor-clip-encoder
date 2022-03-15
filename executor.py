@@ -30,8 +30,8 @@ class CLIPEncoder(Executor):
                 'openai/clip-vit-base-patch32'
             - A path to a directory containing model weights saved, e.g.,
                 ./my_model_directory/
-        :param finetuned_checkpoint_path: The finetuned model checkpoint file path. If set, the pretrained model
-            weights will be replaced with weights from the given checkpoint.
+        :param finetuned_checkpoint_path: If set, the pretrained model weights will be replaced with weights
+            loading from the given checkpoint.
         :param base_feature_extractor: Base feature extractor for images.
             Defaults to ``pretrained_model_name_or_path`` if None.
         :param base_tokenizer_model: Base tokenizer model.
