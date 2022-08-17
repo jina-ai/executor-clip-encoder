@@ -1,5 +1,6 @@
+--extra-index-url https://download.pytorch.org/whl/cu116
+torch==1.12.1
 docarray
 jina>=3.0
 Pillow==9.0.1
-torch==1.10.2
 transformers==4.16.2
