@@ -5,7 +5,7 @@ import torch
 from docarray import DocumentArray
 from jina import Executor, requests
 from transformers import CLIPFeatureExtractor, CLIPModel, CLIPTokenizer
-
+import warnings
 
 class CLIPEncoder(Executor):
     def __init__(
@@ -18,7 +18,8 @@ class CLIPEncoder(Executor):
         max_length: int = 77,
         device: str = 'cpu',
         overwrite_embeddings: bool = False,
-        traversal_paths: str = '@r',
+        access_paths: str = '@r',
+        traversal_paths: Optional[str] = None,
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -47,14 +48,21 @@ class CLIPEncoder(Executor):
         :param overwrite_embeddings: Whether to overwrite existing embeddings. By
             default docs that have embeddings already are not processed. This value
             can be overwritten if the same parameter is passed to the request.
-        :param traversal_paths: Default traversal paths for encoding, used if
+        :param access_paths: Default traversal paths for encoding, used if
             the traversal path is not passed as a parameter with the request.
+        :param traversal_paths: please use access_paths
         :param batch_size: Default batch size for encoding, used if the
             batch size is not passed as a parameter with the request.
         """
         super().__init__(*args, **kwargs)
         self.overwrite_embeddings = overwrite_embeddings
-        self.traversal_paths = traversal_paths
+
+        if traversal_paths is not None:
+            self.access_paths = traversal_paths
+            warnings.warn("'traversal_paths' will be deprecated in the future, please use 'access_paths'")
+        else:
+            self.access_paths = access_paths
+
         self.batch_size = batch_size
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.base_tokenizer_model = (
@@ -108,10 +116,10 @@ class CLIPEncoder(Executor):
             they are of the shape ``[3, H, W]``  with ``dtype=float32``. They should
             also be normalized (values between 0 and 1).
         :param parameters: A dictionary that contains parameters to control encoding.
-            The accepted keys are ``traversal_paths`` and ``batch_size`` - in their
+            The accepted keys are ``access_paths`` and ``batch_size`` - in their
             absence their corresponding default values are used.
         """
-        traversal_paths = parameters.get('traversal_paths', self.traversal_paths)
+        access_paths = parameters.get('access_paths', self.access_paths)
         batch_size = parameters.get('batch_size', self.batch_size)
         overwrite_embeddings = parameters.get(
             'overwrite_embeddings', self.overwrite_embeddings
@@ -121,7 +129,7 @@ class CLIPEncoder(Executor):
                 lambda x: (
                     bool(x.text) and (overwrite_embeddings or x.embedding is None)
                 ),
-                docs[traversal_paths],
+                docs[access_paths],
             )
         )
         image_docs = DocumentArray(
@@ -130,7 +138,7 @@ class CLIPEncoder(Executor):
                     (x.tensor is not None or x.blob != b'' or x.uri)
                     and (overwrite_embeddings or x.embedding is None)
                 ),
-                docs[traversal_paths],
+                docs[access_paths],
             )
         )
 
